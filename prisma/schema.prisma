@@ -1,0 +1,79 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Veiculo {
+  ID                  Int      @id @default(autoincrement())
+  PLACA               String
+  RENAVAM             String?
+  ATIVO               Boolean  @default(true)
+  CADASTRO_VERIFICADO Boolean  @default(false)
+  DT_CRIACAO          DateTime
+  DT_ATUALIZACAO      DateTime
+
+  @@map("veiculos")
+}
+
+model Proprietario {
+  ID                  Int       @id @default(autoincrement())
+  NOME_PROP           String
+  ANTT_PROP           String?
+  STATUS_ANTT         String?
+  DT_VALIDADE_ANTT    DateTime?
+  CPF_CNPJ_PROP       String
+  ATIVO               Boolean   @default(true)
+  CADASTRO_VERIFICADO Boolean   @default(false)
+  DT_CRIACAO          DateTime
+  DT_ATUALIZACAO      DateTime
+
+  @@map("proprietarios")
+}
+
+model Motorista {
+  ID                   Int       @id @default(autoincrement())
+  NOME_MOT             String
+  CPF_MOT              String
+  CNH_MOT              String?
+  NOME_PAI             String?
+  NOME_MAE             String?
+  CATEGORIA_CNH_MOT    String?
+  COD_SITUACAO_CNH_MOT String?
+  DT_VALIDADE_CNH      DateTime?
+  DT_EMISSAO_CNH       DateTime?
+  DT_PRIMEIRA_CNH      DateTime?
+  DT_NASCIMENTO        String?
+  FOTO_MOTORISTA       String?
+  ATIVO                Boolean   @default(true)
+  CADASTRO_VERIFICADO  Boolean   @default(false)
+  DT_CRIACAO           DateTime
+  DT_ATUALIZACAO       DateTime
+
+  @@map("motoristas")
+}
+
+model Viagem {
+  ID               Int       @id @default(autoincrement())
+  IDCLIENT         Int
+  NUMERO_CLIENTE   String
+  DT_VIAGEM        DateTime
+  MERCADORIA       String
+  CIDADE_ORIGEM    String
+  CIDADE_DESTINO   String
+  IDMOTORISTA      Int
+  IDPROPRIETARIO   Int
+  IDVEICULO        Int
+  CARRETA1         String?
+  CARRETA2         String?
+  CARRETA3         String?
+  CARRETA4         String?
+  VIAGEM_CANCELADO String
+  DT_CANCELAMENTO  DateTime?
+  DT_CLIENTE       DateTime
+  DT_CRIACAO       DateTime
+  DT_ATUALIZACAO   DateTime
+}
