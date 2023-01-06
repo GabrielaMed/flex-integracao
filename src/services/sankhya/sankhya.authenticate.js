@@ -61,7 +61,7 @@ export class SankhyaServiceAuthenticate {
         config
       )
       .then((response) => {
-        console.log(this.user, this.password, response.data);
+        //console.log(this.user, this.password, response.data);
         const message = response?.data?.statusMessage || "";
         const result = {
           jessionid: response.data.responseBody?.jsessionid

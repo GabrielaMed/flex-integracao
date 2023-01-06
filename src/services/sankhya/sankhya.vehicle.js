@@ -2,16 +2,18 @@ import { apiMge, apiProd } from "./api.js";
 import { SankhyaServiceAuthenticate } from "./sankhya.authenticate.js";
 
 export async function SankhyaServiceConfirmationNote() {
-  const sankhya = new SankhyaServiceAuthenticate()
-  const { jessionid } = await sankhya.authUserSankhya(process.env.USER, process.env.PASSWORD);
+  //const sankhya = new SankhyaServiceAuthenticate()
+  //const { jessionid } = await sankhya.authUserSankhya(process.env.USER, process.env.PASSWORD);
+  const jessionid = { '$': process.env.JSESSION }
 
   let config = {
     headers: {
       "Content-Type": "application/json;charset=UTF-8",
-      // AppKey: 'b4f1d94f-33f4-4f04-afdd-61442eaebd74',
+      //AppKey: 'b4f1d94f-33f4-4f04-afdd-61442eaebd74',
       Cookie: `JSESSIONID=${jessionid['$']}`,
     },
   };
+
 
   console.log(jessionid['$'], "jsession")
 
