@@ -9,7 +9,7 @@ export async function SankhyaServiceConfirmationNote() {
     headers: {
       "Content-Type": "application/json;charset=UTF-8",
       // AppKey: 'b4f1d94f-33f4-4f04-afdd-61442eaebd74',
-      "Cookie": `JSESSIONID=${jessionid['$']}`,
+      Cookie: `JSESSIONID=${jessionid['$']}`,
     },
   };
 
@@ -34,7 +34,7 @@ export async function SankhyaServiceConfirmationNote() {
   };
   return await apiMge
     .get(
-      `service.sbr?serviceName=CRUDServiceProvider.loadRecords&outputType=json`,
+      `service.sbr?serviceName=CRUDServiceProvider.loadRecords&outputType=json&mgeSession=${jessionid['$']}`,
       requestBody,
       config,
     )
