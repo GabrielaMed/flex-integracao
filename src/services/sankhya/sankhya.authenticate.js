@@ -1,72 +1,65 @@
+import "dotenv/config";
 import { apiMge } from "./api.js";
-import AxiosRequestConfig from 'axios'
-
-var token;
-var idUsuario;
-var logged = false;
 
 export class SankhyaServiceAuthenticate {
-  static instance;
+  static instance = null;
   user = "";
   password = "";
-
+  token = "";
 
   constructor() {
-    this.token = "";
     this.idUsuario = "";
   }
 
+  static async getInstance() {
+    if (!this.instance) {
+      this.instance = new SankhyaServiceAuthenticate();
+    }
+    return this.instance;
+  }
+
   authUserSankhya = async (user, password) => {
-    if (user && password) {
-      this.user = user;
-      this.password = password;
-    } else {
-      this.logged = true;
-    }
+    try {
+      if (user && password) {
+        this.user = user;
+        this.password = password;
+      }
 
-    let config = {
-      headers: {
-        // AppKey: 'b4f1d94f-33f4-4f04-afdd-61442eaebd74',
-        "Content-Type": "application/json;charset=UTF-8",
-        // "Cookie": ""
-        // Connection: 'keep-alive',
-      },
-    };
-    if (this.token !== "") {
-      config = {
-        ...config,
-        headers: { ...config.headers, Cookie: `JSESSIONID=${this.token}` },
+      let config = {
+        headers: {
+          // AppKey: 'b4f1d94f-33f4-4f04-afdd-61442eaebd74',
+          "Content-Type": "application/json;charset=UTF-8",
+          // Cookie: this.token != "" ? `JSESSIONID=${this.token}` : "",
+        },
       };
-    }
 
-    const requestBody = {
-      serviceName: "MobileLoginSP.Login",
-      requestBody: {
-        NOMUSU: {
-          $: this.user.toUpperCase(),
+      const requestBody = {
+        requestBody: {
+          NOMUSU: {
+            $: this.user.toUpperCase(),
+          },
+          INTERNO: {
+            $: this.password,
+          },
+          KEEPCONNECTED: {
+            $: "N",
+          },
         },
-        INTERNO: {
-          $: this.password,
-        },
-        KEEPCONNECTED: {
-          $: "S",
-        },
-      },
-    };
+      };
 
-    return await apiMge
-      .post(
+      if (this.token != "")
+        apiMge.defaults.headers.Cookie = `JSESSIONID=${this.token}`;
+
+      const response = await apiMge.post(
         `service.sbr?serviceName=MobileLoginSP.login&outputType=json`,
         requestBody,
         config
-      )
-      .then((response) => {
-        //console.log(this.user, this.password, response.data);
-        const message = response?.data?.statusMessage || "";
-        const result = {
-          jessionid: response.data.responseBody?.jsessionid
-        };
-        return result;
-      });
+      );
+      this.token = response?.data?.responseBody?.jsessionid?.$;
+
+      return this.token;
+    } catch (error) {
+      console.log(error);
+    }
   };
 }
