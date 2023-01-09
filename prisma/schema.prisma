@@ -8,13 +8,14 @@ datasource db {
 }
 
 model Veiculo {
-  ID                  Int      @id @default(autoincrement())
-  PLACA               String
-  RENAVAM             String?
-  ATIVO               Boolean  @default(true)
-  CADASTRO_VERIFICADO Boolean  @default(false)
-  DT_CRIACAO          DateTime
-  DT_ATUALIZACAO      DateTime
+  id                  Int      @id @default(autoincrement())
+  placa               String
+  renavam             String?
+  ativo               Boolean  @default(true)
+  cadastro_verificado Boolean  @default(false)
+  dt_criacao          DateTime
+  dt_atualizacao      DateTime
+  id_vehicle_customer Int?
 
   @@map("veiculos")
 }

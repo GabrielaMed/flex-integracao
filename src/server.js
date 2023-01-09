@@ -16,7 +16,8 @@ app.use(express.urlencoded({ extended: true }));
 app.use(morgan("dev"));
 
 const connectSankhya = async () => {
-  await SankhyaServiceVehicle(syncTypes.updated);
+  await SankhyaServiceVehicle(syncTypes.created);
+  //await SankhyaServiceVehicle(syncTypes.updated);
 };
 
 const teste = async () => {

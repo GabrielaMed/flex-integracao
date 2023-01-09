@@ -3,6 +3,7 @@ import { SankhyaServiceAuthenticate } from "./sankhya.authenticate.js";
 import "dotenv/config";
 import { syncTypes } from "../../shared/syncTypes.js";
 import { LogsIntegration } from "../../modules/logs_integration.js";
+import { prisma } from "../../database/prismaClient.js";
 
 export async function SankhyaServiceVehicle(syncType) {
 
@@ -64,16 +65,42 @@ export async function SankhyaServiceVehicle(syncType) {
     const dataParsed = data.map((item) => ({
       placa: item.f0.$,
       renavam: item.f1.$,
-      ativo: item.f2.$,
-      dt_criacao: item.f4.$,
-      dt_atualizacao: item.f3.$,
-      id_vehicle_customer: item.f5.$, // criar o campo id_vehicle_customer na tabela veiculos
+      ativo: item.f2.$ == 'S',
+      dt_criacao: item.f4.$ ? new Date(item.f4.$) : new Date(),
+      dt_atualizacao: item.f3.$ ? new Date(item.f3.$) : new Date(),
+      id_vehicle_customer: Number(item.f5.$), // criar o campo id_vehicle_customer na tabela veiculos - criado
     }));
 
-    // gravar dados de sincronizacao no banco de dados (data e hora e tipo, se foi created ou updated), pagina, nome do sincronismo
+    // fazer rotina para incluir/alterar esses dados no postgres
+    if (syncType == "created") {
+      await prisma.veiculo.createMany({
+        data: dataParsed,
+        skipDuplicates: true
+      })
 
-    await logsIntegration.updateSync(logId, page)
-    console.log(dataParsed); // fazer rotina para incluir/alterar esses dados no postgres
+    }
+    else {
+      dataParsed.forEach(async (vehicle) => {
+        const vehicleToUpdate = await prisma.veiculo.findUnique({
+          where: {
+            id_vehicle_customer: vehicle.id_vehicle_customer
+          },
+        })
+        if (vehicleToUpdate) {
+          await prisma.veiculo.update({
+            where: {
+              id_vehicle_customer: vehicle.id_vehicle_customer
+            },
+            update: vehicle,
+            create: vehicle
+          })
+        }
+
+      });
+    }
+
+    await logsIntegration.updateSync(logId, page)// gravar dados de sincronizacao no banco de dados (data e hora e tipo, se foi created ou updated), pagina, nome do sincronismo
+    console.log(dataParsed);
 
     if (process.env.SANKHYA_PAGINATION == totalRecords) {
       await getData(page + 1);
