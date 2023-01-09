@@ -2,27 +2,32 @@ import { apiMge } from "./api.js";
 import { SankhyaServiceAuthenticate } from "./sankhya.authenticate.js";
 import "dotenv/config";
 import { syncTypes } from "../../shared/syncTypes.js";
+import { LogsIntegration } from "../../modules/logs_integration.js";
 
 export async function SankhyaServiceVehicle(syncType) {
+
   const sankhyaService = await SankhyaServiceAuthenticate.getInstance();
   const token = await sankhyaService.authUserSankhya(
     process.env.SANKHYA_USER,
     process.env.SANKHYA_PASSWORD
   );
+  const logsIntegration = new LogsIntegration();
 
   // const lastSync = undefined;
-  const lastSync = "03/01/2023"; // pegar a data e hora da aultima sincronização do banco de dados
+  const lastSync = await logsIntegration.findLastSync(); // pegar a data e hora da ultima sincronização do banco de dados
+
+  const logId = await logsIntegration.createSync('veiculos', syncType)
 
   const requestBody = (page) => {
     const criteria = lastSync
       ? {
-          expression: {
-            $:
-              syncType == syncTypes.created
-                ? `this.AD_DHINC > ${lastSync}`
-                : `this.AD_DHALT > ${lastSync}`,
-          },
-        }
+        expression: {
+          $:
+            syncType == syncTypes.created
+              ? `this.AD_DHINC > ${lastSync}`
+              : `this.AD_DHALT > ${lastSync}`,
+        },
+      }
       : {};
 
     return {
@@ -52,6 +57,7 @@ export async function SankhyaServiceVehicle(syncType) {
       { data: { ...requestBody(page) } }
     );
 
+    console.log(response.data)
     const totalRecords = response.data.responseBody.entities.total;
     const data = response.data.responseBody.entities.entity;
 
@@ -64,8 +70,10 @@ export async function SankhyaServiceVehicle(syncType) {
       id_vehicle_customer: item.f5.$, // criar o campo id_vehicle_customer na tabela veiculos
     }));
 
+    // gravar dados de sincronizacao no banco de dados (data e hora e tipo, se foi created ou updated), pagina, nome do sincronismo
+
+    await logsIntegration.updateSync(logId, page)
     console.log(dataParsed); // fazer rotina para incluir/alterar esses dados no postgres
-    // gravar dados de sincronizacao no banco de dados (data e hora e tipo, se foi created ou updated), pagina, nome do sincronisto
 
     if (process.env.SANKHYA_PAGINATION == totalRecords) {
       await getData(page + 1);
