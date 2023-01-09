@@ -51,6 +51,7 @@ export async function SankhyaServiceVehicle(syncType) {
   apiMge.defaults.headers.Cookie = `JSESSIONID=${token}`;
 
   const getData = async (page) => {
+    console.log(page, 'page')
     // console.log("requestBody", requestBody(page));
 
     const response = await apiMge.get(
@@ -100,12 +101,12 @@ export async function SankhyaServiceVehicle(syncType) {
     }
 
     await logsIntegration.updateSync(logId, page)// gravar dados de sincronizacao no banco de dados (data e hora e tipo, se foi created ou updated), pagina, nome do sincronismo
-    console.log(dataParsed);
+    // console.log(dataParsed);
 
     if (process.env.SANKHYA_PAGINATION == totalRecords) {
       await getData(page + 1);
     }
   };
 
-  await getData(0);
+  await getData(5);
 }
