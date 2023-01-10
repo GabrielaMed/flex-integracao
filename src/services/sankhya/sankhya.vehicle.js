@@ -4,9 +4,9 @@ import "dotenv/config";
 import { syncTypes } from "../../shared/syncTypes.js";
 import { LogsIntegration } from "../../modules/logs_integration.js";
 import { prisma } from "../../database/prismaClient.js";
+import { getDateTimeFromString } from "../utils/dateTime.js";
 
 export async function SankhyaServiceVehicle(syncType) {
-
   const sankhyaService = await SankhyaServiceAuthenticate.getInstance();
   const token = await sankhyaService.authUserSankhya(
     process.env.SANKHYA_USER,
@@ -17,18 +17,18 @@ export async function SankhyaServiceVehicle(syncType) {
   // const lastSync = undefined;
   const lastSync = await logsIntegration.findLastSync(); // pegar a data e hora da ultima sincronização do banco de dados
 
-  const logId = await logsIntegration.createSync('veiculos', syncType)
+  const logId = await logsIntegration.createSync("veiculos", syncType);
 
   const requestBody = (page) => {
     const criteria = lastSync
       ? {
-        expression: {
-          $:
-            syncType == syncTypes.created
-              ? `this.AD_DHINC > ${lastSync}`
-              : `this.AD_DHALT > ${lastSync}`,
-        },
-      }
+          expression: {
+            $:
+              syncType == syncTypes.created
+                ? `this.AD_DHINC > ${lastSync}`
+                : `this.AD_DHALT > ${lastSync}`,
+          },
+        }
       : {};
 
     return {
@@ -51,62 +51,64 @@ export async function SankhyaServiceVehicle(syncType) {
   apiMge.defaults.headers.Cookie = `JSESSIONID=${token}`;
 
   const getData = async (page) => {
-    console.log(page, 'page')
-    // console.log("requestBody", requestBody(page));
+    try {
+      console.log(page, "page");
 
-    const response = await apiMge.get(
-      `service.sbr?serviceName=CRUDServiceProvider.loadRecords&outputType=json`,
-      { data: { ...requestBody(page) } }
-    );
+      const response = await apiMge.get(
+        `service.sbr?serviceName=CRUDServiceProvider.loadRecords&outputType=json`,
+        { data: { ...requestBody(page) } }
+      );
 
-    console.log(response.data)
-    const totalRecords = response.data.responseBody.entities.total;
-    const data = response.data.responseBody.entities.entity;
+      const totalRecords = response.data.responseBody.entities.total;
+      const data = response.data.responseBody.entities.entity;
 
-    const dataParsed = data.map((item) => ({
-      placa: item.f0.$,
-      renavam: item.f1.$,
-      ativo: item.f2.$ == 'S',
-      dt_criacao: item.f4.$ ? new Date(item.f4.$) : new Date(),
-      dt_atualizacao: item.f3.$ ? new Date(item.f3.$) : new Date(),
-      id_vehicle_customer: Number(item.f5.$), // criar o campo id_vehicle_customer na tabela veiculos - criado
-    }));
+      if (!data) return;
 
-    // fazer rotina para incluir/alterar esses dados no postgres
-    if (syncType == "created") {
-      await prisma.veiculo.createMany({
-        data: dataParsed,
-        skipDuplicates: true
-      })
-
-    }
-    else {
-      dataParsed.forEach(async (vehicle) => {
-        const vehicleToUpdate = await prisma.veiculo.findUnique({
-          where: {
-            id_vehicle_customer: vehicle.id_vehicle_customer
-          },
-        })
-        if (vehicleToUpdate) {
-          await prisma.veiculo.update({
-            where: {
-              id_vehicle_customer: vehicle.id_vehicle_customer
-            },
-            update: vehicle,
-            create: vehicle
-          })
+      const dataParsed = data.map((item) => {
+        if (item?.f0?.$) {
+          return {
+            placa: item.f0.$,
+            renavam: item.f1.$,
+            ativo: item.f2.$ == "S",
+            dt_criacao: getDateTimeFromString(item?.f4?.$),
+            dt_atualizacao: getDateTimeFromString(item?.f3?.$),
+            id_vehicle_customer: Number(item.f5.$), // criar o campo id_vehicle_customer na tabela veiculos - criado
+          };
         }
-
       });
-    }
 
-    await logsIntegration.updateSync(logId, page)// gravar dados de sincronizacao no banco de dados (data e hora e tipo, se foi created ou updated), pagina, nome do sincronismo
-    // console.log(dataParsed);
+      if (syncType == "created") {
+        await prisma.veiculo.createMany({
+          data: dataParsed,
+          skipDuplicates: true,
+        });
+      } else {
+        dataParsed.forEach(async (vehicle) => {
+          const vehicleToUpdate = await prisma.veiculo.findUnique({
+            where: {
+              id_vehicle_customer: vehicle.id_vehicle_customer,
+            },
+          });
+          if (vehicleToUpdate) {
+            await prisma.veiculo.update({
+              where: {
+                id_vehicle_customer: vehicle.id_vehicle_customer,
+              },
+              update: vehicle,
+              create: vehicle,
+            });
+          }
+        });
+      }
 
-    if (process.env.SANKHYA_PAGINATION == totalRecords) {
-      await getData(page + 1);
+      await logsIntegration.updateSync(logId, page); // gravar dados de sincronizacao no banco de dados (data e hora e tipo, se foi created ou updated), pagina, nome do sincronismo
+      if (process.env.SANKHYA_PAGINATION == totalRecords) {
+        await getData(page + 1);
+      }
+    } catch (error) {
+      console.log(`Error on getData with page ${page}:`, error);
     }
   };
 
-  await getData(5);
+  await getData(1);
 }

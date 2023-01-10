@@ -29,7 +29,6 @@ export class SankhyaServiceAuthenticate {
         headers: {
           // AppKey: 'b4f1d94f-33f4-4f04-afdd-61442eaebd74',
           "Content-Type": "application/json;charset=UTF-8",
-          // Cookie: this.token != "" ? `JSESSIONID=${this.token}` : "",
         },
       };
 
@@ -42,7 +41,7 @@ export class SankhyaServiceAuthenticate {
             $: this.password,
           },
           KEEPCONNECTED: {
-            $: "N",
+            $: "S",
           },
         },
       };
