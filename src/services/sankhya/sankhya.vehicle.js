@@ -22,13 +22,13 @@ export async function SankhyaServiceVehicle(syncType) {
   const requestBody = (page) => {
     const criteria = lastSync
       ? {
-          expression: {
-            $:
-              syncType == syncTypes.created
-                ? `this.AD_DHINC > ${lastSync}`
-                : `this.AD_DHALT > ${lastSync}`,
-          },
-        }
+        expression: {
+          $:
+            syncType == syncTypes.created
+              ? `this.AD_DHINC > ${lastSync}`
+              : `this.AD_DHALT > ${lastSync}`,
+        },
+      }
       : {};
 
     return {
@@ -54,10 +54,15 @@ export async function SankhyaServiceVehicle(syncType) {
     try {
       console.log(page, "page");
 
+      const testRequestBody = requestBody(page)
+      console.log("requestBody", JSON.stringify(testRequestBody))
+
       const response = await apiMge.get(
         `service.sbr?serviceName=CRUDServiceProvider.loadRecords&outputType=json`,
-        { data: { ...requestBody(page) } }
+        { data: { ...testRequestBody } }
       );
+
+
 
       const totalRecords = response.data.responseBody.entities.total;
       const data = response.data.responseBody.entities.entity;
@@ -84,18 +89,17 @@ export async function SankhyaServiceVehicle(syncType) {
         });
       } else {
         dataParsed.forEach(async (vehicle) => {
-          const vehicleToUpdate = await prisma.veiculo.findUnique({
+          const vehicleToUpdate = await prisma.veiculo.findMany({
             where: {
               id_vehicle_customer: vehicle.id_vehicle_customer,
             },
           });
-          if (vehicleToUpdate) {
+          if (vehicleToUpdate.length > 0) {
             await prisma.veiculo.update({
               where: {
-                id_vehicle_customer: vehicle.id_vehicle_customer,
+                id: vehicleToUpdate[0].id,
               },
-              update: vehicle,
-              create: vehicle,
+              data: vehicle,
             });
           }
         });
@@ -110,5 +114,5 @@ export async function SankhyaServiceVehicle(syncType) {
     }
   };
 
-  await getData(1);
+  await getData(0);
 }
