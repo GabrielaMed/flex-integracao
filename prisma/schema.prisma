@@ -21,16 +21,13 @@ model Veiculo {
 }
 
 model Proprietario {
-  ID                  Int       @id @default(autoincrement())
-  NOME_PROP           String
-  ANTT_PROP           String?
-  STATUS_ANTT         String?
-  DT_VALIDADE_ANTT    DateTime?
-  CPF_CNPJ_PROP       String
-  ATIVO               Boolean   @default(true)
-  CADASTRO_VERIFICADO Boolean   @default(false)
-  DT_CRIACAO          DateTime
-  DT_ATUALIZACAO      DateTime
+  id             Int      @id @default(autoincrement())
+  nome_prop      String
+  cpf_cnpj_prop  String
+  ativo          Boolean  @default(true)
+  dt_criacao     DateTime
+  dt_atualizacao DateTime
+  cod_prop       Int
 
   @@map("proprietarios")
 }
@@ -87,6 +84,7 @@ model IntegracaoSankhya {
   type_sync  String
   page       Int
   table_name String
+  state      String
 
   @@map("integracao_sankhya")
 }

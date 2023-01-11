@@ -6,6 +6,7 @@ import cors from "cors";
 import "dotenv/config";
 import { SankhyaServiceVehicle } from "./services/sankhya/sankhya.vehicle.js";
 import { syncTypes } from "./shared/syncTypes.js";
+import { SankhyaServiceOwner } from "./services/sankhya/sankhya.owner.js";
 
 const app = express();
 
@@ -16,8 +17,9 @@ app.use(express.urlencoded({ extended: true }));
 app.use(morgan("dev"));
 
 const connectSankhya = async () => {
-  //await SankhyaServiceVehicle(syncTypes.created);
-  await SankhyaServiceVehicle(syncTypes.updated);
+  //await SankhyaServiceOwner(syncTypes.created);
+  await SankhyaServiceOwner(syncTypes.updated);
+  console.log("Process finished")
 };
 
 const teste = async () => {

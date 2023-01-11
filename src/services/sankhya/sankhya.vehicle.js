@@ -5,6 +5,8 @@ import { syncTypes } from "../../shared/syncTypes.js";
 import { LogsIntegration } from "../../modules/logs_integration.js";
 import { prisma } from "../../database/prismaClient.js";
 import { getDateTimeFromString } from "../utils/dateTime.js";
+import { stateTypes } from "../../shared/stateTypes.js"
+import { tableTypes } from "../../shared/tableTypes.js"
 
 export async function SankhyaServiceVehicle(syncType) {
   const sankhyaService = await SankhyaServiceAuthenticate.getInstance();
@@ -15,9 +17,9 @@ export async function SankhyaServiceVehicle(syncType) {
   const logsIntegration = new LogsIntegration();
 
   // const lastSync = undefined;
-  const lastSync = await logsIntegration.findLastSync(); // pegar a data e hora da ultima sincronização do banco de dados
+  const lastSync = await logsIntegration.findLastSync(syncType, tableTypes.veiculos); // pegar a data e hora da ultima sincronização do banco de dados
 
-  const logId = await logsIntegration.createSync("veiculos", syncType);
+  const logId = await logsIntegration.createSync("veiculos", syncType, stateTypes.inProgress);
 
   const requestBody = (page) => {
     const criteria = lastSync
@@ -25,8 +27,8 @@ export async function SankhyaServiceVehicle(syncType) {
         expression: {
           $:
             syncType == syncTypes.created
-              ? `this.AD_DHINC > ${lastSync}`
-              : `this.AD_DHALT > ${lastSync}`,
+              ? `this.AD_DHINC > TO_DATE('${lastSync}', 'dd/mm/yyyy HH24:MI:SS')`
+              : `this.AD_DHALT > TO_DATE('${lastSync}', 'dd/mm/yyyy HH24:MI:SS')`,
         },
       }
       : {};
@@ -55,7 +57,7 @@ export async function SankhyaServiceVehicle(syncType) {
       console.log(page, "page");
 
       const testRequestBody = requestBody(page)
-      console.log("requestBody", JSON.stringify(testRequestBody))
+      //console.log("requestBody", JSON.stringify(testRequestBody))
 
       const response = await apiMge.get(
         `service.sbr?serviceName=CRUDServiceProvider.loadRecords&outputType=json`,
@@ -65,10 +67,10 @@ export async function SankhyaServiceVehicle(syncType) {
 
 
       const totalRecords = response.data.responseBody.entities.total;
-      const data = response.data.responseBody.entities.entity;
+      const data = Array.isArray(response.data.responseBody.entities.entity) ? response.data.responseBody.entities.entity : [response.data.responseBody.entities.entity];
 
       if (!data) return;
-
+      //console.log(data, "data")
       const dataParsed = data.map((item) => {
         if (item?.f0?.$) {
           return {
@@ -77,7 +79,7 @@ export async function SankhyaServiceVehicle(syncType) {
             ativo: item.f2.$ == "S",
             dt_criacao: getDateTimeFromString(item?.f4?.$),
             dt_atualizacao: getDateTimeFromString(item?.f3?.$),
-            id_vehicle_customer: Number(item.f5.$), // criar o campo id_vehicle_customer na tabela veiculos - criado
+            id_vehicle_customer: Number(item.f5.$),
           };
         }
       });
@@ -105,12 +107,19 @@ export async function SankhyaServiceVehicle(syncType) {
         });
       }
 
-      await logsIntegration.updateSync(logId, page); // gravar dados de sincronizacao no banco de dados (data e hora e tipo, se foi created ou updated), pagina, nome do sincronismo
+      await logsIntegration.updateSync(logId, page, stateTypes.inProgress); // gravar dados de sincronizacao no banco de dados (data e hora e tipo, se foi created ou updated), pagina, nome do sincronismo
       if (process.env.SANKHYA_PAGINATION == totalRecords) {
         await getData(page + 1);
       }
+      else {
+        console.log(syncType, " Finished.")
+        //fazer updateStatus success
+        await logsIntegration.updateSync(logId, page, stateTypes.success)
+      }
     } catch (error) {
       console.log(`Error on getData with page ${page}:`, error);
+      //faz updateStatus error
+      await logsIntegration.updateSync(logId, page, stateTypes.error)
     }
   };
 
