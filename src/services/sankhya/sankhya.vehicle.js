@@ -71,17 +71,16 @@ export async function SankhyaServiceVehicle(syncType) {
 
       if (!data) return;
       //console.log(data, "data")
-      const dataParsed = data.map((item) => {
-        if (item?.f0?.$) {
-          return {
-            placa: item.f0.$,
-            renavam: item.f1.$,
-            ativo: item.f2.$ == "S",
-            dt_criacao: getDateTimeFromString(item?.f4?.$),
-            dt_atualizacao: getDateTimeFromString(item?.f3?.$),
-            id_vehicle_customer: Number(item.f5.$),
-          };
-        }
+      const dataParsed = data.filter(item => item?.f0?.$).map((item) => {
+        return {
+          placa: item.f0.$,
+          renavam: item.f1.$,
+          ativo: item.f2.$ == "S",
+          dt_criacao: getDateTimeFromString(item?.f4?.$),
+          dt_atualizacao: getDateTimeFromString(item?.f3?.$),
+          id_vehicle_customer: Number(item.f5.$),
+        };
+
       });
 
       if (syncType == "created") {

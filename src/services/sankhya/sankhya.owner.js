@@ -19,7 +19,8 @@ export async function SankhyaServiceOwner(syncType) {
     // const lastSync = undefined;
     const lastSync = await logsIntegration.findLastSync(syncType, tableTypes.proprietarios); // pegar a data e hora da ultima sincronização do banco de dados
 
-    const logId = await logsIntegration.createSync("proprietarios", syncType, stateTypes.inProgress);
+    const logId = await logsIntegration.createSync(tableTypes.proprietarios, syncType, stateTypes.inProgress);
+    if (!lastSync && syncType == syncTypes.created) await logsIntegration.createSync(tableTypes.proprietarios, syncTypes.updated, stateTypes.success);
 
     const requestBody = (page) => {
         const criteria = lastSync
@@ -42,15 +43,8 @@ export async function SankhyaServiceOwner(syncType) {
                     criteria,
                     dataRow: {
                         localFields: {
-                            CODCID: {
-                                $: "10"
-                            },
-
                             TRANSPORTADORA: {
                                 $: "S"
-                            },
-                            CLASSIFICMS: {
-                                $: "C"
                             }
                         }
                     },
@@ -82,23 +76,23 @@ export async function SankhyaServiceOwner(syncType) {
             const data = Array.isArray(response.data.responseBody.entities.entity) ? response.data.responseBody.entities.entity : [response.data.responseBody.entities.entity];
 
             if (!data) return;
-            console.log(data)
-            const dataParsed = data.map((item) => {
-                if (item?.f1?.$) {
-                    return {
-                        nome_prop: item.f0.$,
-                        cpf_cnpj_prop: item.f1.$,
-                        ativo: item.f2.$ == "S",
-                        dt_criacao: getDateTimeFromString(item?.f4?.$),
-                        dt_atualizacao: getDateTimeFromString(item?.f3?.$),
-                        cod_prop: Number(item.f5.$)
-                    };
-                }
+            //console.log(data)
+            const dataParsed = data.filter(item => item?.f1?.$).map((item) => {
+
+                return {
+                    nome_prop: item.f0.$,
+                    cpf_cnpj_prop: item.f1.$,
+                    ativo: item.f2.$ == "S",
+                    dt_criacao: getDateTimeFromString(item?.f4?.$),
+                    dt_atualizacao: getDateTimeFromString(item?.f3?.$),
+                    cod_prop: Number(item.f5.$)
+                };
+
             });
 
             //console.log("data", dataParsed)
 
-            if (syncType == "created") {
+            if (syncType == syncTypes.created) {
                 await prisma.proprietario.createMany({
                     data: dataParsed,
                     skipDuplicates: true,
@@ -128,7 +122,7 @@ export async function SankhyaServiceOwner(syncType) {
                 await getData(page + 1);
             }
             else {
-                console.log(syncType, " Finished.")
+                console.log(syncType, stateTypes.success)
                 //fazer updateStatus success
                 await logsIntegration.updateSync(logId, page, stateTypes.success)
             }
