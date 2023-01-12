@@ -16,6 +16,7 @@ model Veiculo {
   dt_criacao          DateTime
   dt_atualizacao      DateTime
   id_vehicle_customer Int?
+  Viagem              Viagem[]
 
   @@map("veiculos")
 }
@@ -28,6 +29,7 @@ model Proprietario {
   dt_criacao     DateTime
   dt_atualizacao DateTime
   cod_prop       Int
+  Viagem         Viagem[]
 
   @@map("proprietarios")
 }
@@ -44,30 +46,32 @@ model Motorista {
   dt_criacao      DateTime
   dt_atualizacao  DateTime
   cod_mot         Int
+  Viagem          Viagem[]
 
   @@map("motoristas")
 }
 
 model Viagem {
-  ID               Int       @id @default(autoincrement())
-  IDCLIENT         Int
-  NUMERO_CLIENTE   String
-  DT_VIAGEM        DateTime
-  MERCADORIA       String
-  CIDADE_ORIGEM    String
-  CIDADE_DESTINO   String
-  IDMOTORISTA      Int
-  IDPROPRIETARIO   Int
-  IDVEICULO        Int
-  CARRETA1         String?
-  CARRETA2         String?
-  CARRETA3         String?
-  CARRETA4         String?
-  VIAGEM_CANCELADO String
-  DT_CANCELAMENTO  DateTime?
-  DT_CLIENTE       DateTime
-  DT_CRIACAO       DateTime
-  DT_ATUALIZACAO   DateTime
+  id Int @id @default(autoincrement())
+  id_cliente       Int CODPARCCLI
+  dt_viagem        DateTime AD_DHFINVIAGEM
+  mercadoria       String Produto_DESCRPROD
+  cidade_origem    String CODCIDORIGEM
+  cidade_destino   String CODCIDDESTINO
+  carreta_um       String? VeiculoReboque1_MARCAPLACA
+  carreta_dois     String? VeiculoReboque2_MARCAPLACA
+  carreta_tres     String? VeiculoReboque3_MARCAPLACA
+  viagem_cancelado String AD_SOLCANCEXT
+  dt_cancelamento  DateTime? DHCANCEL
+  dt_criacao       DateTime DHINCLUSAO
+  dt_atualizacao   DateTime DTALTER
+  id_motorista     Int CODPARCMOTORISTA
+  id_proprietario  Int CODPARCPROPANTT
+  id_veiculo       Int CODVEICULO
+
+  motorista    Motorista    @relation(fields: [id_motorista], references: [id])
+  proprietario Proprietario @relation(fields: [id_proprietario], references: [id])
+  veiculo      Veiculo      @relation(fields: [id_veiculo], references: [id])
 
   @@map("viagens")
 }
