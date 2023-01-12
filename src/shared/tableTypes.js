@@ -1,4 +1,5 @@
 export const tableTypes = {
     veiculos: "veiculos",
-    proprietarios: "proprietarios"
+    proprietarios: "proprietarios",
+    motorista: "motorista"
 }

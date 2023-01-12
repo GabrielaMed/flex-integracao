@@ -33,23 +33,17 @@ model Proprietario {
 }
 
 model Motorista {
-  ID                   Int       @id @default(autoincrement())
-  NOME_MOT             String
-  CPF_MOT              String
-  CNH_MOT              String?
-  NOME_PAI             String?
-  NOME_MAE             String?
-  CATEGORIA_CNH_MOT    String?
-  COD_SITUACAO_CNH_MOT String?
-  DT_VALIDADE_CNH      DateTime?
-  DT_EMISSAO_CNH       DateTime?
-  DT_PRIMEIRA_CNH      DateTime?
-  DT_NASCIMENTO        String?
-  FOTO_MOTORISTA       String?
-  ATIVO                Boolean   @default(true)
-  CADASTRO_VERIFICADO  Boolean   @default(false)
-  DT_CRIACAO           DateTime
-  DT_ATUALIZACAO       DateTime
+  id              Int       @id @default(autoincrement())
+  nome_mot        String
+  cpf_mot         String
+  cnh_mot         String?
+  dt_emissao_cnh  DateTime?
+  dt_primeira_cnh DateTime?
+  dt_nascimento   DateTime?
+  ativo           Boolean   @default(true)
+  dt_criacao      DateTime
+  dt_atualizacao  DateTime
+  cod_mot         Int
 
   @@map("motoristas")
 }
