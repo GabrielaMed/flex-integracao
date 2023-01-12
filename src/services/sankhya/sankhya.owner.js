@@ -78,7 +78,6 @@ export async function SankhyaServiceOwner(syncType) {
             if (!data) return;
             //console.log(data)
             const dataParsed = data.filter(item => item?.f1?.$).map((item) => {
-
                 return {
                     nome_prop: item.f0.$,
                     cpf_cnpj_prop: item.f1.$,

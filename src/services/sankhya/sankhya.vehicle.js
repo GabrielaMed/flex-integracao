@@ -19,7 +19,8 @@ export async function SankhyaServiceVehicle(syncType) {
   // const lastSync = undefined;
   const lastSync = await logsIntegration.findLastSync(syncType, tableTypes.veiculos); // pegar a data e hora da ultima sincronização do banco de dados
 
-  const logId = await logsIntegration.createSync("veiculos", syncType, stateTypes.inProgress);
+  const logId = await logsIntegration.createSync(tableTypes.veiculos, syncType, stateTypes.inProgress);
+  if (!lastSync && syncType == syncTypes.created) await logsIntegration.createSync(tableTypes.veiculos, syncTypes.updated, stateTypes.success);
 
   const requestBody = (page) => {
     const criteria = lastSync
@@ -64,8 +65,6 @@ export async function SankhyaServiceVehicle(syncType) {
         { data: { ...testRequestBody } }
       );
 
-
-
       const totalRecords = response.data.responseBody.entities.total;
       const data = Array.isArray(response.data.responseBody.entities.entity) ? response.data.responseBody.entities.entity : [response.data.responseBody.entities.entity];
 
@@ -83,7 +82,7 @@ export async function SankhyaServiceVehicle(syncType) {
 
       });
 
-      if (syncType == "created") {
+      if (syncType == syncTypes.created) {
         await prisma.veiculo.createMany({
           data: dataParsed,
           skipDuplicates: true,
@@ -111,7 +110,7 @@ export async function SankhyaServiceVehicle(syncType) {
         await getData(page + 1);
       }
       else {
-        console.log(syncType, " Finished.")
+        console.log(syncType, stateTypes.success)
         //fazer updateStatus success
         await logsIntegration.updateSync(logId, page, stateTypes.success)
       }
