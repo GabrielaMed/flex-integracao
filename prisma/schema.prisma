@@ -37,7 +37,7 @@ model Proprietario {
 model Motorista {
   id              Int       @id @default(autoincrement())
   nome_mot        String
-  cpf_mot         String
+  cpf_cnpj_mot    String
   cnh_mot         String?
   dt_emissao_cnh  DateTime?
   dt_primeira_cnh DateTime?
@@ -52,22 +52,23 @@ model Motorista {
 }
 
 model Viagem {
-  id Int @id @default(autoincrement())
-  id_cliente       Int CODPARCCLI
-  dt_viagem        DateTime AD_DHFINVIAGEM
-  mercadoria       String Produto_DESCRPROD
-  cidade_origem    String CODCIDORIGEM
-  cidade_destino   String CODCIDDESTINO
-  carreta_um       String? VeiculoReboque1_MARCAPLACA
-  carreta_dois     String? VeiculoReboque2_MARCAPLACA
-  carreta_tres     String? VeiculoReboque3_MARCAPLACA
-  viagem_cancelado String AD_SOLCANCEXT
-  dt_cancelamento  DateTime? DHCANCEL
-  dt_criacao       DateTime DHINCLUSAO
-  dt_atualizacao   DateTime DTALTER
-  id_motorista     Int CODPARCMOTORISTA
-  id_proprietario  Int CODPARCPROPANTT
-  id_veiculo       Int CODVEICULO
+  id               Int       @id @default(autoincrement())
+  id_cliente       Int?
+  dt_viagem        DateTime?
+  mercadoria       String?
+  cidade_origem    String?
+  cidade_destino   String?
+  carreta1         String?
+  carreta2         String?
+  carreta3         String?
+  viagem_cancelado String?
+  dt_cancelamento  DateTime?
+  dt_criacao       DateTime
+  dt_atualizacao   DateTime
+  id_motorista     Int
+  id_proprietario  Int
+  id_veiculo       Int
+  cod_ordem_carga  Int
 
   motorista    Motorista    @relation(fields: [id_motorista], references: [id])
   proprietario Proprietario @relation(fields: [id_proprietario], references: [id])

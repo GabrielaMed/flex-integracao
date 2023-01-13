@@ -17,10 +17,10 @@ export async function SankhyaServiceDriver(syncType) {
     const logsIntegration = new LogsIntegration();
 
     // const lastSync = undefined;
-    const lastSync = await logsIntegration.findLastSync(syncType, tableTypes.motorista); // pegar a data e hora da ultima sincronização do banco de dados
+    const lastSync = await logsIntegration.findLastSync(syncType, tableTypes.motoristas); // pegar a data e hora da ultima sincronização do banco de dados
 
-    const logId = await logsIntegration.createSync(tableTypes.motorista, syncType, stateTypes.inProgress);
-    if (!lastSync && syncType == syncTypes.created) await logsIntegration.createSync(tableTypes.motorista, syncTypes.updated, stateTypes.success);
+    const logId = await logsIntegration.createSync(tableTypes.motoristas, syncType, stateTypes.inProgress);
+    if (!lastSync && syncType == syncTypes.created) await logsIntegration.createSync(tableTypes.motoristas, syncTypes.updated, stateTypes.success);
 
     const requestBody = (page) => {
         const criteria = lastSync
@@ -83,7 +83,7 @@ export async function SankhyaServiceDriver(syncType) {
             const dataParsed = data.filter(item => item?.f1?.$).map((item) => {
                 return {
                     nome_mot: item.f0.$,
-                    cpf_mot: item.f1.$,
+                    cpf_cnpj_mot: item.f1.$,
                     cnh_mot: item.f2?.$,
                     dt_emissao_cnh: new Date(item.f3?.$),
                     dt_primeira_cnh: new Date(item.f4?.$),
