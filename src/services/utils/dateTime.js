@@ -1,4 +1,5 @@
-export const getDateTimeFromString = (str) => {
+export const getDateTimeFromString = (str, nullLabel = false) => {
+  if (nullLabel && !str) return str;
   if (!str) return new Date();
 
   const [dateValues, timeValues] = str.split(" ");

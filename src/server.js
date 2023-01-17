@@ -20,7 +20,7 @@ app.use(morgan("dev"));
 
 const connectSankhya = async () => {
   await SankhyaServiceTravel(syncTypes.created);
-  //await SankhyaServiceTravel(syncTypes.updated);
+  await SankhyaServiceTravel(syncTypes.updated);
   console.log("Process finished")
 };
 

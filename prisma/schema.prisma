@@ -53,7 +53,7 @@ model Motorista {
 
 model Viagem {
   id               Int       @id @default(autoincrement())
-  id_cliente       Int?
+  id_cliente       Int
   dt_viagem        DateTime?
   mercadoria       String?
   cidade_origem    String?

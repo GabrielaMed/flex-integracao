@@ -55,7 +55,7 @@ export async function SankhyaServiceTravel(syncType) {
 
     const getData = async (page) => {
         try {
-            //console.log(page, "page");
+            console.log(page, "page");
 
             const testRequestBody = requestBody(page)
             //console.log("requestBody", JSON.stringify(testRequestBody))
@@ -79,7 +79,7 @@ export async function SankhyaServiceTravel(syncType) {
             })
 
             //console.log(field, "teste")
-            //console.log(field.find((item) => item.name == "RESPONSAVELSEGURO").idx)
+            //console.log("f", field.find((item) => item.name == "DHINCLUSAO").idx, "$", getDateTimeFromString(item[`f${field.find((item) => item.name == "DTALTER").idx}`]?.$))
 
             const totalRecords = response.data.responseBody.entities.total;
             const data = Array.isArray(response.data.responseBody.entities.entity) ? response.data.responseBody.entities.entity : [response.data.responseBody.entities.entity];
@@ -88,6 +88,10 @@ export async function SankhyaServiceTravel(syncType) {
             //console.log(data)
             const dataParsed = data.filter(item =>
                 item[`f${field.find((item) => item.name == "CODPARCCLI").idx}`]?.$ &&
+                item[`f${field.find((item) => item.name == "CidadeOrigem_NOMECID").idx}`]?.$ &&
+                item[`f${field.find((item) => item.name == "AD_UFORIGEM").idx}`]?.$ &&
+                item[`f${field.find((item) => item.name == "CidadeDestino_NOMECID").idx}`]?.$ &&
+                item[`f${field.find((item) => item.name == "AD_UFDESTINO").idx}`]?.$ &&
                 item[`f${field.find((item) => item.name == "ORDEMCARGA").idx}`]?.$ &&
                 item[`f${field.find((item) => item.name == "CODPARCMOTORISTA").idx}`]?.$ &&
                 item[`f${field.find((item) => item.name == "CODPARCPROPANTT").idx}`]?.$ &&
@@ -96,17 +100,23 @@ export async function SankhyaServiceTravel(syncType) {
                     // //console.log("test", getDateTimeFromString(item[
                     //     `f${field.find((item) => item.name == "DHINCLUSAO").idx}`]?.$), item[
                     //         `f${field.find((item) => item.name == "DHINCLUSAO").idx}`]?.$)
+
+                    //console.log("f", field.find((item) => item.name == "CODPARCPROPANTT").idx)
                     return {
-                        id_cliente: item[
-                            `f${field.find((item) => item.name == "CODPARCCLI").idx}`]?.$,
+                        id_cliente: Number(item[
+                            `f${field.find((item) => item.name == "CODPARCCLI").idx}`]?.$),
                         dt_viagem: getDateTimeFromString(item[
                             `f${field.find((item) => item.name == "DHSAIDA").idx}`]?.$),
                         mercadoria: item[
                             `f${field.find((item) => item.name == "Produto_DESCRPROD").idx}`]?.$,
                         cidade_origem: item[
-                            `f${field.find((item) => item.name == "CidadeOrigem_NOMECID").idx}`]?.$,
+                            `f${field.find((item) => item.name == "CidadeOrigem_NOMECID").idx}`]?.$ +
+                            " - " +
+                            item[`f${field.find((item) => item.name == "AD_UFORIGEM").idx}`]?.$,
                         cidade_destino: item[
-                            `f${field.find((item) => item.name == "CidadeDestino_NOMECID").idx}`]?.$,
+                            `f${field.find((item) => item.name == "CidadeDestino_NOMECID").idx}`]?.$ +
+                            " - " +
+                            item[`f${field.find((item) => item.name == "AD_UFDESTINO").idx}`]?.$,
                         carreta1: item[
                             `f${field.find((item) => item.name == "VeiculoReboque1_MARCAPLACA").idx}`]?.$?.replaceAll('[', '')?.replaceAll(']', ''),
                         carreta2: item[
@@ -115,8 +125,8 @@ export async function SankhyaServiceTravel(syncType) {
                             `f${field.find((item) => item.name == "VeiculoReboque3_MARCAPLACA").idx}`]?.$?.replaceAll('[', '')?.replaceAll(']', ''),
                         viagem_cancelado: item[
                             `f${field.find((item) => item.name == "AD_SOLCANCEXT").idx}`]?.$,
-                        dt_cancelamento: item[
-                            `f${field.find((item) => item.name == "DHCANCEL").idx}`]?.$,
+                        dt_cancelamento: getDateTimeFromString(item[
+                            `f${field.find((item) => item.name == "DHCANCEL").idx}`]?.$, true),
                         dt_criacao: getDateTimeFromString(item[
                             `f${field.find((item) => item.name == "DHINCLUSAO").idx}`]?.$),
                         dt_atualizacao: getDateTimeFromString(item[
@@ -133,12 +143,7 @@ export async function SankhyaServiceTravel(syncType) {
 
                 });
 
-            console.log("data", dataParsed[0])
-            const deleteCodigos = async () => {
-                delete dataParsed.cod_motorista
-                delete dataParsed.cod_proprietario
-                delete dataParsed.cod_veiculo
-            }
+            //console.log("data", dataParsed[0])
             dataParsed.forEach(async (travel) => {
                 const motorista = await prisma.motorista.findMany({
                     where: {
@@ -152,46 +157,52 @@ export async function SankhyaServiceTravel(syncType) {
                     }
                 })
 
+
                 const veiculo = await prisma.veiculo.findMany({
                     where: {
                         id_vehicle_customer: travel.cod_veiculo
                     }
                 })
+                //console.log("prop", proprietario)
 
-                await deleteCodigos()
-                console.log("data", dataParsed[0])
+                if (motorista.length > 0 && proprietario.length > 0 && veiculo.length > 0) {
+                    const id_motorista = motorista[0].id
+                    const id_proprietario = proprietario[0].id
+                    const id_veiculo = veiculo[0].id
 
-                if (syncType == syncTypes.created) {
-                    await prisma.viagem.createMany({
-                        data: [{
-                            ...dataParsed,
-                            id_motorista: motorista[0].id,
-                            id_proprietario: proprietario[0].id,
-                            id_veiculo: veiculo[0].id
-                        }],
-                        skipDuplicates: true,
-                    });
-                } else {
-                    const ordemToUpdate = await prisma.viagem.findMany({
-                        where: {
-                            cod_ordem_carga: travel.cod_ordem_carga,
-                        },
-                    });
-                    //console.log("toUp", ownerToUpdate)
-                    if (ordemToUpdate.length > 0) {
-                        await prisma.viagem.update({
-                            where: {
-                                id: ordemToUpdate[0].id,
-                            },
-                            data: {
-                                ...dataParsed,
-                                id_motorista: motorista[0].id,
-                                id_proprietario: proprietario[0].id,
-                                id_veiculo: veiculo[0].id
-                            }
+                    delete travel.cod_motorista
+                    delete travel.cod_proprietario
+                    delete travel.cod_veiculo
+
+                    travel['id_motorista'] = id_motorista
+                    travel['id_proprietario'] = id_proprietario
+                    travel['id_veiculo'] = id_veiculo
+
+
+                    if (syncType == syncTypes.created) {
+                        await prisma.viagem.createMany({
+                            data: travel,
+                            skipDuplicates: true,
                         });
-                    }
+                    } else {
+                        const ordemToUpdate = await prisma.viagem.findMany({
+                            where: {
+                                cod_ordem_carga: travel.cod_ordem_carga,
+                            },
+                        });
+                        //console.log("toUp", ownerToUpdate)
+                        if (ordemToUpdate.length > 0) {
+                            await prisma.viagem.update({
+                                where: {
+                                    id: ordemToUpdate[0].id,
+                                },
+                                data: {
+                                    ...dataParsed,
+                                }
+                            });
+                        }
 
+                    }
                 }
             })
 
@@ -208,7 +219,8 @@ export async function SankhyaServiceTravel(syncType) {
         } catch (error) {
             console.log(`Error on getData with page ${page}:`, error);
             //faz updateStatus error
-            await logsIntegration.updateSync(logId, page, stateTypes.error)
+            await logsIntegration.updateSync(logId, page, stateTypes.error);
+            await getData(page + 1);
         }
     };
 

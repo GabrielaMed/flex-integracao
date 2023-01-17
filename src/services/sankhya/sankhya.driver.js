@@ -106,6 +106,9 @@ export async function SankhyaServiceDriver(syncType) {
             } else {
                 dataParsed.forEach(async (driver) => {
                     //console.log("ow", owner)
+                    delete driver.nome_mot
+                    delete driver.cpf_cnpj_mot
+
                     const driverToUpdate = await prisma.motorista.findMany({
                         where: {
                             cod_mot: driver?.cod_mot,
