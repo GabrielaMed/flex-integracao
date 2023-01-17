@@ -106,7 +106,7 @@ export async function SankhyaServiceTravel(syncType) {
                         id_cliente: Number(item[
                             `f${field.find((item) => item.name == "CODPARCCLI").idx}`]?.$),
                         dt_viagem: getDateTimeFromString(item[
-                            `f${field.find((item) => item.name == "DHSAIDA").idx}`]?.$),
+                            `f${field.find((item) => item.name == "DHSAIDA").idx}`]?.$, true),
                         mercadoria: item[
                             `f${field.find((item) => item.name == "Produto_DESCRPROD").idx}`]?.$,
                         cidade_origem: item[
