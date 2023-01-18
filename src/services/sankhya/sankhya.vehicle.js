@@ -57,20 +57,20 @@ export async function SankhyaServiceVehicle(syncType) {
     try {
       console.log(page, "page");
 
-      const testRequestBody = requestBody(page)
-      //console.log("requestBody", JSON.stringify(testRequestBody))
+      let dataRequestBody = requestBody(page)
+      //console.log("requestBody", JSON.stringify(dataRequestBody))
 
-      const response = await apiMge.get(
+      let response = await apiMge.get(
         `service.sbr?serviceName=CRUDServiceProvider.loadRecords&outputType=json`,
-        { data: { ...testRequestBody } }
+        { data: { ...dataRequestBody } }
       );
 
       const totalRecords = response.data.responseBody.entities.total;
-      const data = Array.isArray(response.data.responseBody.entities.entity) ? response.data.responseBody.entities.entity : [response.data.responseBody.entities.entity];
+      let data = Array.isArray(response.data.responseBody.entities.entity) ? response.data.responseBody.entities.entity : [response.data.responseBody.entities.entity];
 
       if (!data) return;
       //console.log(data, "data")
-      const dataParsed = data.filter(item => item?.f0?.$).map((item) => {
+      let dataParsed = data.filter(item => item?.f0?.$).map((item) => {
         return {
           placa: item.f0.$,
           renavam: item.f1.$,
@@ -89,7 +89,7 @@ export async function SankhyaServiceVehicle(syncType) {
         });
       } else {
         dataParsed.forEach(async (vehicle) => {
-          const vehicleToUpdate = await prisma.veiculo.findMany({
+          let vehicleToUpdate = await prisma.veiculo.findMany({
             where: {
               id_vehicle_customer: vehicle.id_vehicle_customer,
             },
@@ -102,8 +102,19 @@ export async function SankhyaServiceVehicle(syncType) {
               data: vehicle,
             });
           }
+          vehicleToUpdate = null
         });
       }
+
+      dataParsed = null
+      data = null
+      response = null
+      dataRequestBody = null
+
+      const used = process.memoryUsage().heapUsed / 1024 / 1024;
+      console.log(
+        `The app uses approximately ${Math.round(used * 100) / 100} MB`
+      );
 
       await logsIntegration.updateSync(logId, page, stateTypes.inProgress); // gravar dados de sincronizacao no banco de dados (data e hora e tipo, se foi created ou updated), pagina, nome do sincronismo
       if (process.env.SANKHYA_PAGINATION == totalRecords) {
@@ -118,6 +129,10 @@ export async function SankhyaServiceVehicle(syncType) {
       console.log(`Error on getData with page ${page}:`, error);
       //faz updateStatus error
       await logsIntegration.updateSync(logId, page, stateTypes.error)
+
+      if (process.env.IGNORE_ERROR == "YES") {
+        await getData(page + 1);
+      }
     }
   };
 

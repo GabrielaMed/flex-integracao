@@ -57,20 +57,20 @@ export async function SankhyaServiceTravel(syncType) {
         try {
             console.log(page, "page");
 
-            const testRequestBody = requestBody(page)
-            //console.log("requestBody", JSON.stringify(testRequestBody))
+            let dataRequestBody = requestBody(page)
+            //console.log("requestBody", JSON.stringify(dataRequestBody))
 
-            const response = await apiMge.get(
+            let response = await apiMge.get(
                 `service.sbr?serviceName=CRUDServiceProvider.loadRecords&outputType=json`,
-                { data: { ...testRequestBody } }
+                { data: { ...dataRequestBody } }
             );
 
             // const fields = response.data.responseBody.entities.metadata.fields.field((item, idx) => {
             //     name: item.name,
             //         idx
             // })
-            const fields = response.data.responseBody.entities.metadata.fields.field
-            const field = fields.map((item, idx) => {
+            let fields = response.data.responseBody.entities.metadata.fields.field
+            let field = fields.map((item, idx) => {
                 return {
                     name: item.name,
                     idx
@@ -82,11 +82,11 @@ export async function SankhyaServiceTravel(syncType) {
             //console.log("f", field.find((item) => item.name == "DHINCLUSAO").idx, "$", getDateTimeFromString(item[`f${field.find((item) => item.name == "DTALTER").idx}`]?.$))
 
             const totalRecords = response.data.responseBody.entities.total;
-            const data = Array.isArray(response.data.responseBody.entities.entity) ? response.data.responseBody.entities.entity : [response.data.responseBody.entities.entity];
+            let data = Array.isArray(response.data.responseBody.entities.entity) ? response.data.responseBody.entities.entity : [response.data.responseBody.entities.entity];
 
             if (!data) return;
             //console.log(data)
-            const dataParsed = data.filter(item =>
+            let dataParsed = data.filter(item =>
                 item[`f${field.find((item) => item.name == "CODPARCCLI").idx}`]?.$ &&
                 item[`f${field.find((item) => item.name == "CidadeOrigem_NOMECID").idx}`]?.$ &&
                 item[`f${field.find((item) => item.name == "AD_UFORIGEM").idx}`]?.$ &&
@@ -145,20 +145,20 @@ export async function SankhyaServiceTravel(syncType) {
 
             //console.log("data", dataParsed[0])
             dataParsed.forEach(async (travel) => {
-                const motorista = await prisma.motorista.findMany({
+                let motorista = await prisma.motorista.findMany({
                     where: {
                         cod_mot: travel.cod_motorista,
                     },
                 });
 
-                const proprietario = await prisma.proprietario.findMany({
+                let proprietario = await prisma.proprietario.findMany({
                     where: {
                         cod_prop: travel.cod_proprietario
                     }
                 })
 
 
-                const veiculo = await prisma.veiculo.findMany({
+                let veiculo = await prisma.veiculo.findMany({
                     where: {
                         id_vehicle_customer: travel.cod_veiculo
                     }
@@ -184,28 +184,43 @@ export async function SankhyaServiceTravel(syncType) {
                             data: travel,
                             skipDuplicates: true,
                         });
+
                     } else {
-                        const ordemToUpdate = await prisma.viagem.findMany({
+                        let ordemToUpdate = await prisma.viagem.findMany({
                             where: {
                                 cod_ordem_carga: travel.cod_ordem_carga,
                             },
                         });
-                        //console.log("toUp", ownerToUpdate)
+                        //console.log("toUp", ordemToUpdate)
                         if (ordemToUpdate.length > 0) {
                             await prisma.viagem.update({
                                 where: {
                                     id: ordemToUpdate[0].id,
                                 },
-                                data: {
-                                    ...dataParsed,
-                                }
+                                data: travel
                             });
                         }
 
+                        ordemToUpdate = null
                     }
                 }
+                motorista = null
+                proprietario = null
+                veiculo = null
+
             })
 
+            dataParsed = null
+            data = null
+            response = null
+            dataRequestBody = null
+            field = null
+            fields = null
+
+            const used = process.memoryUsage().heapUsed / 1024 / 1024;
+            console.log(
+                `The app uses approximately ${Math.round(used * 100) / 100} MB`
+            );
 
             await logsIntegration.updateSync(logId, page, stateTypes.inProgress); // gravar dados de sincronizacao no banco de dados (data e hora e tipo, se foi created ou updated), pagina, nome do sincronismo
             if (process.env.SANKHYA_PAGINATION == totalRecords) {
@@ -216,11 +231,15 @@ export async function SankhyaServiceTravel(syncType) {
                 //fazer updateStatus success
                 await logsIntegration.updateSync(logId, page, stateTypes.success)
             }
+
         } catch (error) {
             console.log(`Error on getData with page ${page}:`, error);
             //faz updateStatus error
             await logsIntegration.updateSync(logId, page, stateTypes.error);
-            await getData(page + 1);
+
+            if (process.env.IGNORE_ERROR == "YES") {
+                await getData(page + 1);
+            }
         }
     };
 

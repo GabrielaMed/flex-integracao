@@ -67,20 +67,20 @@ export async function SankhyaServiceDriver(syncType) {
         try {
             console.log(page, "page");
 
-            const testRequestBody = requestBody(page)
-            //console.log("requestBody", JSON.stringify(testRequestBody))
+            let dataRequestBody = requestBody(page)
+            //console.log("requestBody", JSON.stringify(dataRequestBody))
 
-            const response = await apiMge.get(
+            let response = await apiMge.get(
                 `service.sbr?serviceName=CRUDServiceProvider.loadRecords&outputType=json`,
-                { data: { ...testRequestBody } }
+                { data: { ...dataRequestBody } }
             );
 
             const totalRecords = response.data.responseBody.entities.total;
-            const data = Array.isArray(response.data.responseBody.entities.entity) ? response.data.responseBody.entities.entity : [response.data.responseBody.entities.entity];
+            let data = Array.isArray(response.data.responseBody.entities.entity) ? response.data.responseBody.entities.entity : [response.data.responseBody.entities.entity];
 
             if (!data) return;
             //console.log(data)
-            const dataParsed = data.filter(item => item?.f1?.$).map((item) => {
+            let dataParsed = data.filter(item => item?.f1?.$).map((item) => {
                 return {
                     nome_mot: item.f0.$,
                     cpf_cnpj_mot: item.f1.$,
@@ -109,7 +109,7 @@ export async function SankhyaServiceDriver(syncType) {
                     delete driver.nome_mot
                     delete driver.cpf_cnpj_mot
 
-                    const driverToUpdate = await prisma.motorista.findMany({
+                    let driverToUpdate = await prisma.motorista.findMany({
                         where: {
                             cod_mot: driver?.cod_mot,
                         },
@@ -123,8 +123,19 @@ export async function SankhyaServiceDriver(syncType) {
                             data: driver,
                         });
                     }
+                    driverToUpdate = null
                 });
             }
+
+            dataParsed = null
+            data = null
+            response = null
+            dataRequestBody = null
+
+            const used = process.memoryUsage().heapUsed / 1024 / 1024;
+            console.log(
+                `The app uses approximately ${Math.round(used * 100) / 100} MB`
+            );
 
             await logsIntegration.updateSync(logId, page, stateTypes.inProgress); // gravar dados de sincronizacao no banco de dados (data e hora e tipo, se foi created ou updated), pagina, nome do sincronismo
             if (process.env.SANKHYA_PAGINATION == totalRecords) {
@@ -139,6 +150,10 @@ export async function SankhyaServiceDriver(syncType) {
             console.log(`Error on getData with page ${page}:`, error);
             //faz updateStatus error
             await logsIntegration.updateSync(logId, page, stateTypes.error)
+
+            if (process.env.IGNORE_ERROR == "YES") {
+                await getData(page + 1);
+            }
         }
     };
 
